@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>贪吃蛇</title>
+	<meta charset="UTF-8">
+	<meta name="keywords" content="贪吃蛇">
+	<meta name="Description" content="这是一个初学者用来学习的小游戏">
+	<style type="text/css">
+	*{margin:0;}
+	.map{margin:100px auto;
+		height:600px;
+		width:900px;
+		background:pink;
+		border:10px solid #AFAEB2;
+		border-radius:8px;
+	}
+	</style>
+</head>
+ 
+<body>
+<div class="map">
+<canvas id="canvas" height="600" width="900">
+</canvas>
+</div>
+ 
+<script>
+  
+	//获取绘制工具
+    //获取画板
+	var c=document.getElementById("canvas");
+    //画布上绘制的类型 2d
+    var ctx=c.getContext("2d");
+ 
+    var snake =[];//定义一条蛇，画蛇的身体
+    var snakeCount = 3;//初始化蛇的长度
+	var foodx =0; //初始化食物的x轴坐标
+	var foody =0;//初始化食物的y轴坐标
+    var togo =0;//初始化按键为0
+    function drawtable()//画地图的函数（画表格）
+    {
+    	for(var i=0;i<60;i++)//画竖线
+    	{
+            //绘制矩形的颜色  绘制矩形边框strokeRect（x,y,width,height）;
+    		ctx.strokeStyle="black";
+            //beginPath() 方法在一个画布中开始子路径的一个新的集合
+    		ctx.beginPath();
+            //moveTo() 方法可把窗口的左上角移动到一个指定的坐标 每个小矩形15长宽
+    		ctx.moveTo(15*i,0);
+            //lineTo() 方法为当前子路径添加一条直线
+    		ctx.lineTo(15*i,600);
+            //closePath()路线闭合
+    		ctx.closePath();
+            // stroke() 方法绘制当前路径的边框
+    		ctx.stroke();
+    	}
+        for(var j=0;j<40;j++)//画横线
+    	{
+            //绘制矩形的颜色 
+    		ctx.strokeStyle="black";
+            //画布开始绘画
+    		ctx.beginPath();
+            //moveTo() 方法可把窗口的左上角移动到一个指定的坐标
+    		ctx.moveTo(0,15*j);
+            //lineTo() 方法为当前子路径添加一条直线
+    		ctx.lineTo(900,15*j);
+            //画布闭合
+    		ctx.closePath();
+            // stroke() 方法绘制当前路径的边框
+    		ctx.stroke();
+    	}
+    	
+    	for(var k=0;k<snakeCount;k++)//画蛇的身体
+			{
+                //fillStyle填充状态
+			ctx.fillStyle="#000";
+			if (k==snakeCount-1)
+            //因为蛇头是属于数组中的最后一个小方块
+			{
+				ctx.fillStyle="red";//蛇头的颜色与身体区分开
+			}
+            //FillRect函数用指定的画刷填充矩形
+			ctx.fillRect(snake[k].x,snake[k].y,15,15);
+            //前两个数是矩形的起始坐标，后两个数是矩形的长宽。
+			}
+			//绘制食物	
+            //fillstyle填充颜色
+    		ctx.fillStyle ="black";
+            //fillrect填充矩形，前两个数是起始坐标，后两个数是矩形的宽高
+	        ctx.fillRect(foodx,foody,15,15);
+            //fill填充
+	        ctx.fill();
+    }
+ 
+    
+    function start()//定义蛇的坐标
+    {
+    	// var snake =[]; 定义一条蛇，画蛇的身体
+        // var snakeCount 初始化蛇的长度
+		for(var k=0;k<snakeCount;k++)
+    		{
+                //蛇的起始是从蛇的初始长度乘15的横坐标（纵坐标为0）开始，
+    			snake[k]={x:k*15,y:0};
+            }
+		  drawtable();//在start中调用添加地图函数
+          addfood();//在start中调用添加食物函数
+    }
+        //添加食物函数
+    function addfood()
+	{
+	foodx = Math.floor(Math.random()*60)*15; //随机产生一个0-1之间的数，x坐标
+	foody = Math.floor(Math.random()*40)*15;//y坐标
+		for (var k=0;k<snake;k++)
+		{
+			if (foodx==snake[k].x && foody==sanke[k].y)//防止产生的随机食物落在蛇身上
+			{	
+			addfood();
+			}
+		}
+	}	
+    //蛇的运动函数
+   function move()
+   {
+    //判断togo的值
+	switch (togo)
+	{
+	case 1: snake.push({x:snake[snakeCount-1].x-15,y:snake[snakeCount-1].y}); 
+    break;
+    //向左走   x-1个矩形的宽
+	case 2: snake.push({x:snake[snakeCount-1].x,y:snake[snakeCount-1].y-15});
+    //向下走   y-一个矩形的长
+    break;
+	case 3: snake.push({x:snake[snakeCount-1].x+15,y:snake[snakeCount-1].y});
+    //向右走
+    break;
+	case 4: snake.push({x:snake[snakeCount-1].x,y:snake[snakeCount-1].y+15}); 
+    //向上走
+    break;
+    //向左向下（转弯）
+	case 5: snake.push({x:snake[snakeCount-1].x-15,y:snake[snakeCount-1].y-15});
+    break;
+    //向右向上（转弯）
+	case 6: snake.push({x:snake[snakeCount-1].x+15,y:snake[snakeCount-1].y+15}); 
+    break;
+    //默认是向右走的
+	default: snake.push({x:snake[snakeCount-1].x+15,y:snake[snakeCount-1].y});
+	}
+    snake.shift();//shift() 方法用于把数组的第一个元素从其中删除,并返回第一个元素的值
+   	ctx.clearRect(0,0,900,600);//清除画布重新绘制
+   	isEat();//判断进食
+	isDead();//判断是否碰到墙壁
+	drawtable(); //绘画表格
+   } 			
+   
+   function keydown(e)
+   //方法触发 keydown 事件
+   {
+   switch(e.keyCode)//数字键盘上的键的键码值(keyCode)按键键码按键键码
+		{
+         case 37: togo=1; break;//如果keyCode的值为37,则togo=1
+		 case 38: togo=2; break;
+		 case 39: togo=3; break;
+		 case 40: togo=4; break;
+		 case 65: togo=5; break;
+		 case 68: togo=6; break;
+		}
+   }
+   function isEat()//吃到食物后长度加1
+   {
+    if(snake[snakeCount-1].x==foodx&&snake[snakeCount-1].y==foody)
+    //如果蛇头和食物的坐标重合，表示吃到食物
+   {
+		addfood(); //食物被吃了，要产生一个新的食物
+		snakeCount++; //蛇身加一
+		snake.unshift({x:-15,y:-15});
+		//unshift() 方法可向数组的开头添加一个或更多元素,并返回新的长度
+   }  
+   }
+   //判断是不是碰到墙了
+   function isDead()
+   {
+    if (snake[snakeCount-1].x>885||
+        snake[snakeCount-1].y>585||
+        snake[snakeCount-1].x<0||
+        snake[snakeCount-1].y<0)
+		{
+		alert("游戏结束");
+		window.location.reload();
+        // 循环刷新页面
+		}
+   }
+    document.onkeydown=function(e)
+    // 按下键盘事件
+{
+	keydown(e);
+} 
+window.onload = function()
+//onload 常用在 中,一旦完全加载所有内容(包括图像、脚本文件、CSS 文件等),就执行一段脚本
+{ 
+	start();
+	setInterval(move,150);
+	drawtable();
+}
+</script>
+</body>
+</html>
