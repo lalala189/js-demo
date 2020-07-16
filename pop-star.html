@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        html,body{
+            height: 100%;
+            width: 100%;
+        }
+        #pop-star{
+            width: 500px;
+            height: 100%;
+            margin: 0 auto;
+            background-color: darkcyan;
+            position: relative;
+        }
+        .now-score{
+            width: 100%;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            color: #fff;
+        }
+        .select-score{
+            width: 100%;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            color: #fff;
+            /* opacity不透明度 */
+            opacity: 0.1;
+            transition: all 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="pop-star">
+    </div>
+    <script>
+        //获取游戏容器
+        var table = document.getElementById("pop-star");
+        //当前选定方块所得分数
+        var selectScore;
+        //游戏得分
+        var nowScore;
+        //小方块的宽高
+        var squareWidth = 50;
+        //小方块的行数列数
+        var boardWidth = 10;
+        //小方格
+        var squareSet=[];
+        //相连小方块的集合
+        var choose=[];
+        //小方块最多的颜色
+        var styleMaxNum =4;
+        //小方块的颜色
+        var color =['orange',  'green', 'red', 'blue', 'yellow','brown', 'darkmagenta', 'midnightblue'];
+        //小方块闪烁定时器
+        var timer;
+        //消除小方块的基础分
+        var baseScore=20;
+        //每多消除一个小方块所得的分数
+        var stepScore=5;
+        //总分
+        var totalScore=0;
+
+        //创建小方块 row行col列 样式
+        function createSquare(style,row,col){
+            // createEvent()方法创建一个事件对象 tempSquare临时方块
+            var tempSquare = document.createElement("div");
+            tempSquare.style.width = squareWidth+"px";
+            tempSquare.style.height = squareWidth+"px";
+            tempSquare.style.display = "inline-block";
+            tempSquare.style.position = "absolute";
+            tempSquare.style.borderRadius='12px';
+            tempSquare.style.boxSizing='border-box';
+            tempSquare.style.border = '3px solid #bfefff';
+            tempSquare.style.textAlign = 'center';
+            tempSquare.style.lineHeight="44px";
+            tempSquare.style.transition ="left 0.5s,bottom 0.5s"
+            tempSquare.num = style;
+            tempSquare.row = row;//行坐标，也就是 left
+            tempSquare.col = col;//列坐标，也就是 bottom
+            tempSquare.innerHTML = row + ','+col;
+            return tempSquare;
+        }
+
+        //重新设置小方块的位置  refresh重置
+        function refresh(){
+            //循环行列
+            for(var i=0;i<squareSet.length;i++){
+                for(var j=0;j<squareSet[i].length;j++){
+                    if(squareSet[i][j] == null){
+                        continue; //继续
+                    }
+                    squareSet[i][j].row = i;
+                    squareSet[i][j].col = j;
+                    squareSet[i][j].style.left = squareSet[i][j].row*squareWidth+'px';
+                    //方块的总宽
+                    squareSet[i][j].style.bottom = squareSet[i][j].col*squareWidth+"px";
+                    //方块的总长
+                    squareSet[i][j].style.background = color[squareSet[i][j].num];
+                    //颜色
+                }
+            }
+        }
+            
+        //鼠标移入小方块
+        function mouseOver(obj){
+                goBack();//恢复样式函数
+                choose=[];//相连小方块暂存数组
+                checkLinked(obj,choose);//查找相连小方块的函数
+                if(choose.length<=1){ //如果相连的方块长度小于等于1的话，则没有相连的方块
+                    choose=null;
+                     //隐藏得分提示  opacity透明度级别 
+                    selectScore.style.transition="all 0.5s";
+                    selectScore.style.opacity = 0;
+                }else{
+                    filcker(choose);//闪烁的函数 filcker闪烁
+                    var score  = computeScore(choose); //计算分数函数
+                    selectScore.style.transition=null;
+                    selectScore.innerHTML="可消除"+choose.length+'块，得'+score+'分';
+                    selectScore.style.opacity=1;//透明度为1
+                }
+            }
+
+        //计算分数 baseScore消除小方块基础分数 stepScore每多加一个方块的分数
+        function computeScore(arr){
+                //baseScore消除小方块基础分数
+                var score = baseScore;
+                for(var i=0;i<arr.length;i++){
+                    //共有i个小方块，stepScore每多消除一个方块的分数
+                    score += i*stepScore;//这时的i是指每个小方块
+                }
+                return score;
+            }
+
+        //使相连的小方块闪烁
+        function filcker(arr){
+            //num是颜色，循环下标为0的颜色
+            var num=0;
+              // 设置间歇调用的方法是setInterval()，每隔0.3毫秒循环一次
+            timer = setInterval(function(){
+                //循环方块，使方块的边框变成#bfefff这个颜色并缩放
+                for(var i=0;i<arr.length;i++){
+                    arr[i].style.border = '3px solid #bfefff';
+                    arr[i].style.transition = 'scale('+(0.9+0.5*Math.pow(-1,num))+')';
+                   //Math.pow(底数,几次方) (-1)^n,可以用Math.pow(-1,n)
+                    //transform 旋转  scale缩放  -1^n永远是-1,不用算  (0.9+0.5*Math.pow(-1,num))=0.4，缩小0.25倍 
+                }
+                //颜色下标加一，继续循环
+                num++;
+            },300);
+        }
+
+        //小方块恢复初始样式
+        function goBack(){
+             //timer设置间歇调用
+            if(timer != null){
+                clearInterval(timer);
+                //clearInterval() 方法可取消由 setInterval() 设置的 timeout
+            }
+            //squareSet小方块格子，重新获取每个小方块的坐标
+            for(var i=0;i<squareSet.length;i++){
+                for(var j=0;j<squareSet[i].length;j++){
+                    //只要小方块的坐标不是为空，就给他闪烁的样式
+                    if(squareSet[i][j] != null){
+                        squareSet[i][j].style.border='3px solid #bfefff';
+                        squareSet[i][j].style.transform='scale(1)';//缩放旋转
+                    }
+                }
+            }
+        }
+
+        //查询相连的颜色小方块，保存在数组中
+        function checkLinked(square,arr){
+            if(square == null){
+                return;
+            }
+            //把相同的方块存放在数组里
+            arr.push(square);
+            //判断左边
+            if(square.col0 >0
+            //列大于0
+            && squareSet[square.row][square.col -1]
+            //列的左边室友方块的
+            && squareSet[square.row][square.col -1].num == square.num
+            //左边的颜色与自己的是一样的
+            && arr.indexOf(squareSet[square.row][square.col-1])==-1){
+                 //indexOf() 方法可返回某个指定的字符串值在字符串中首次出现的位置
+                //如果要检索的字符串值没有出现,则该方法返回 -1
+                //查看左边的小方块的坐标是否已经在数组里了，如果没有就添加进来
+                checkLinked(squareSet[square.row][square.col-1],arr)
+            }
+            //判断右边
+            if(square.col<squareSet[0].length-1
+            && squareSet[square.row][square.col +1]
+            && squareSet[square.row][square.col +1].num ==square.num
+            && arr.indexOf(squareSet[square.row][square.col +1]) == -1){
+                checkLinked(squareSet[square.row][square.col+1],arr)
+            }
+            //判断下边
+            if(square.row>0
+            && squareSet[square.row -1][square.col]
+            && squareSet[square.row -1][square.col].num == square.num
+            && arr.indexOf(squareSet[square.row -1][square.col])== -1){
+                checkLinked(squareSet[square.row-1][square.col],arr)
+            }
+            //判断上边
+            if(square.row<squareSet.length -1
+            && squareSet[square.row+1][square.col]
+            && squareSet[square.row+1][square.col].num == square.num
+            && arr.indexOf(squareSet[square.row+1][square.col])==-1){
+                checkLinked(squareSet[square.row+1][square.col],arr)
+            }
+        }
+
+        //判断游戏是否结束
+        function isGameOver(){
+            for(var i=0;i<squareSet.length;i++){
+                for(var j=0;j<squareSet[i].length;j++){
+                    if(squareSet[i][j] != null){
+                         //定义一个数组
+                        let tempArr = [];
+                         //查询一下这个方块上下左右是否有相同的颜色，放进数组里
+                        checkLinked(squareSet[i][j],tempArr);
+                        //当数组的长度超过1 就说明你有可消灭的星星
+                        if(tempArr.length>1){
+                            console.log('false');  //消除成功
+                            return false;
+                        }
+                    }
+                }
+            }
+            console.log('true');
+            return true;
+        }
+
+        //移动方块
+        function moveSquare(){
+            for(var i=0;i<squareSet.length;i++){
+                var currentPoint = 0;
+                //记录为空的位置，初始是从下面开始找
+                for(var j=0;j<squareSet[i].length;j++){
+                    if(squareSet[i][j] !=null){
+                     //如果J不等于C的话就说明有空，就走第二个if  
+                    //if嵌套if 上面的成立就就跳出，不成立才往下走
+                    //如果j等于currentPoint说明是同一个方块，不做处理
+                    if(j!=currentPoint){
+                        squareSet[i][currentPoint]=squareSet[i][j];
+                        //如果 j 的位置为空，就以 J 为基准，向上查找不为空的方块，并移动到 j 的位置
+                        squareSet[i][currentPoint].col=currentPoint;
+                        //这个坐标的方块的列为空
+                        squareSet[i][j]=null;//坐标为空
+                    }   
+                    currentPoint++;
+                    //当前位置不为空，就向上提一个位置
+                    }
+                }
+            }
+            //移除空列
+        //如果m列为空的话
+        for(var m=0;m<squareSet.length;){
+            if(squareSet[m][0] == null){
+                //移除数组中为空列的项
+                squareSet.splice(m,1);
+            }else{
+        // 不在 for 循环里累加的作用，就是在移除当前列后，移除列的下一列变成当前列
+        //（序号 m 指向新的列），而这一列还没有做判断，所有序号不能累加。
+                m++;
+            }
+        }
+        refresh();//重新设置小方块的位置
+        console.log('moveSquare');
+        if(isGameOver()){
+            alert("Gam over");
+            init();
+        }
+        }
+        //鼠标点击方块
+        function mouseClick(square){
+            //选择方块
+            let chooseSquare=[];
+            //闪烁方块的函数和带的参数
+            checkLinked(square,chooseSquare);
+            if(chooseSquare.length<=1){//单个的不闪烁
+                return;
+            }
+            //计算分数
+            totalScore += computeScore(chooseSquare);
+            nowScore.innerHTML="当前分数："+totalScore;
+            //移除小方块 挨个移除 闪烁方块的个数
+            for(var i=0;i<chooseSquare.length;i++){
+                (function(i){
+            //以一个0.1毫秒的速度移除表格的孩子，就是闪烁的方块，并把该方块的坐标设置为null
+                    setTimeout(()=>{
+                        table.removeChild(chooseSquare[i]);
+                        squareSet[chooseSquare[i].row][chooseSquare[i].col]=null;
+                    },i*100);        
+                })(i)
+            }
+            //小方块向下掉落
+            setTimeout(()=>{
+                 //上面的方块向下掉落
+                 moveSquare();
+            },i*100);
+        }
+        //绑定事件函数
+        function bindEvents(square){
+             //鼠标进入方块
+            square.onmouseover = function(){
+            //执行进入函数
+            mouseOver(this);
+        };
+        //在小方块上点击鼠标
+        square.onclick = function(){
+            //执行点击方法
+            mouseClick(this)
+        }
+    }
+    
+    
+    function init(){
+        //表格显示的页面为空   获取HTML当前标签的起始和结束里面的内容
+        table.innerHTML='';
+        //获取游戏得分
+        nowScore = document.createElement('div');
+        //获取当前选定方块所得分数
+        selectScore = document.createElement("div");
+        //修改当前所得分数的类名
+        nowScore.className = 'now-score';
+        //获取当前得分的分数
+        nowScore.innerHTML='当前分数：'+ totalScore;
+        //修改当前选定方块所得分数的类名
+        selectScore.className='select-score';
+        //往表格里添加两个孩子
+        table.appendChild(nowScore);
+        table.appendChild(selectScore);
+        //小方块格子数组清空
+        squareSet=[];
+        //循环小方块行和列数
+        for(var i = 0;i<boardWidth;i++){
+            //行和列等于新的数组
+            squareSet[i]=new Array();
+            for(var j=0;j<boardWidth;j++){
+                                  // 创建小方块   样式：向上取整随机数*方块最多颜色 (4) 行，列         
+                squareSet[i][j] = createSquare(Math.floor(Math.random()*styleMaxNum),i,j);
+                //绑定事件函数
+                bindEvents(squareSet[i][j]);
+                //表格里添加小方块
+                table.appendChild(squareSet[i][j]);
+            }
+        }
+        refresh();// 重新设置小方块位置
+    }
+    //网页加载完毕后立刻执行的操作
+    window.onload = function(){
+        init();
+    }
+    </script>
+</body>
+</html>
